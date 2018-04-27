@@ -1,4 +1,4 @@
-package net.sduhsd.royr6099.firststeamworks;
+package net.sduhsd.royr6099.firststeamworks.generics;
 
 public abstract class GameObject implements Locatable, Collidable {
 	private int x, y;

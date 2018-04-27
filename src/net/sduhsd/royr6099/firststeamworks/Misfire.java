@@ -6,8 +6,14 @@ import java.io.File;
 
 import javax.imageio.ImageIO;
 
+import net.sduhsd.royr6099.firststeamworks.generics.GameObject;
+import net.sduhsd.royr6099.firststeamworks.generics.MovingObject;
+
 public class Misfire extends MovingObject {
 	private Image image;
+	
+	private int fuel_count = 0;
+	private boolean has_gear = false;
 
 	public Misfire() {
 		this(0, 0, 0);
@@ -23,18 +29,35 @@ public class Misfire extends MovingObject {
 		
 		setDimensions(80, 60);
 		
-		try {
-			image = ImageIO.read(new File("misfire.png"));
-		} catch (Exception e) {
-			System.out.println("Couldn't load the image \'misfire.png\'");
-		}
+		image = ImageLoader.loadImage("misfire.png");
 	}
 
 	public void draw(Graphics window) {
 		window.drawImage(image, getX(), getY(), getWidth(), getHeight(), null);
 	}
-
-	public String toString() {
-		return super.toString() + getSpeed();
+	
+	public void depositGear() {
+		if (hasGear()) {
+			image = ImageLoader.loadImage("misfire.png");
+			
+			has_gear = false;
+		}
+	}
+	
+	public void pickUpGear() {
+		if (!hasGear()) {
+			image = ImageLoader.loadImage("misfire_with_gear.png");
+			
+			has_gear = true;
+		}
+	}
+	
+	public boolean isIn(GameObject zone) {
+		return this.getX() + this.getWidth() > zone.getX() && this.getX() < zone.getX() + zone.getWidth() &&
+				this.getY() + this.getHeight() > zone.getY() && this.getY() < zone.getY() + zone.getHeight();
+	}
+	
+	public boolean hasGear() {
+		return has_gear;
 	}
 }

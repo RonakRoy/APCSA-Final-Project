@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.image.BufferedImage;
@@ -14,6 +15,10 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	private BufferedImage back;
 	
 	private Misfire misfire;
+	private LoadingZone loadingZone;
+	
+	private Image field;
+	private double heightMultiplier;
 	
 	public Steamworks() {
 		setBackground(Color.BLACK);
@@ -24,6 +29,11 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		new Thread(this).start();
 		
 		keys = new boolean[4];
+		
+		field = ImageLoader.loadImage("field.png");
+		heightMultiplier = 1.0 * field.getWidth(null) / (Constants.WINDOW_WIDTH - 80);
+		
+		loadingZone = new LoadingZone();
 
 		setVisible(true);
 	}
@@ -47,6 +57,8 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
 		backgroundGraphics.drawString("FIRST STEAMWORKS", 10, 34);
 
+		backgroundGraphics.drawImage(field, 30, 50, Constants.WINDOW_WIDTH - 80, (int) (field.getWidth(null) * heightMultiplier), null);
+		
 		if (keys[0]) {
 			misfire.setDirection(270);
 			misfire.move();
@@ -65,6 +77,11 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		}
 		
 		misfire.draw(backgroundGraphics);
+		//loadingZone.draw(backgroundGraphics);
+		
+		if (misfire.isIn(loadingZone)) {
+			misfire.pickUpGear();
+		}
 		
 		graphics.drawImage(back, null, 0, 0);
 	}

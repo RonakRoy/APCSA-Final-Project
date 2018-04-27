@@ -1,4 +1,4 @@
-package net.sduhsd.royr6099.firststeamworks;
+package net.sduhsd.royr6099.firststeamworks.generics;
 
 public interface Collidable {	
 	public boolean didCollideLeft(Collidable obj);
