@@ -72,8 +72,8 @@ public abstract class GameObject implements Locatable, Collidable {
 		if (other == null) return false;
 		
 		return isInXRange(other) 
-				&& other.getY() < getY() + getHeight()
-				&& other.getY() + other.getHeight() >= getY();
+				&& getY() < other.getY() + other.getHeight()
+				&& getY() > other.getY();
 	}
 
 	public boolean didCollideBottom(Collidable obj) {
@@ -82,16 +82,20 @@ public abstract class GameObject implements Locatable, Collidable {
 		if (other == null) return false;
 		
 		return isInXRange(other) 
-				&& other.getY() < getY() + getHeight()
-				&& other.getY() + other.getHeight() >= getY();
+				&& getY() + getHeight() > other.getY()
+				&& getY() + getHeight() < other.getY() + other.getHeight();
 	}
 	
 	private boolean isInXRange(GameObject other) {
-		return getX() >= other.getX() && getX() + this.getWidth() <= other.getX() + other.getWidth();
+		return getX() + this.getWidth() >= other.getX() && getX() <= other.getX() + other.getWidth();
 	}
 	
 	private boolean isInYRange(GameObject other) {
-		return getY() >= other.getY() && getY() + this.getHeight() <= other.getY() + other.getHeight();
+		return getY() + this.getHeight() >= other.getY() && getY() <= other.getY() + other.getHeight();
+	}
+	
+	public boolean isIn(GameObject zone) {
+		return isInXRange(zone) && isInYRange(zone);
 	}
 
 }

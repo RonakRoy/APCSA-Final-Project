@@ -27,7 +27,7 @@ public class Misfire extends MovingObject {
 		setPos(x, y);
 		setSpeed(s);
 		
-		setDimensions(80, 60);
+		setDimensions(74, 46);
 		
 		image = ImageLoader.loadImage("misfire.png");
 	}
@@ -50,11 +50,6 @@ public class Misfire extends MovingObject {
 			
 			has_gear = true;
 		}
-	}
-	
-	public boolean isIn(GameObject zone) {
-		return this.getX() + this.getWidth() > zone.getX() && this.getX() < zone.getX() + zone.getWidth() &&
-				this.getY() + this.getHeight() > zone.getY() && this.getY() < zone.getY() + zone.getHeight();
 	}
 	
 	public boolean hasGear() {

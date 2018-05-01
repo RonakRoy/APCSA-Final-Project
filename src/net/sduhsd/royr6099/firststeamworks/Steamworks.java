@@ -22,13 +22,24 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	private List<Gear> gears;
 	private List<GearIndicator> gearIndicators;
 	
+	private List<FixedBlock> fixedBlocks;
+	private List<GearPegZone> pegs;
+	
 	private Image field;
 	private double heightMultiplier;
 	
+	private int top, bottom, left, right;
+	
 	public Steamworks() {
+		top = 80;
+		bottom = Constants.WINDOW_HEIGHT - 160;
+		
+		left = 70;
+		right = 445;
+		
 		setBackground(Color.WHITE);
 		
-		misfire = new Misfire((Constants.BOARD_WIDTH - 80) / 2, Constants.WINDOW_HEIGHT - 170, 2);
+		misfire = new Misfire((Constants.BOARD_WIDTH - 80) / 2, bottom, 2);
 
 		this.addKeyListener(this);
 		new Thread(this).start();
@@ -56,6 +67,20 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		gearIndicators.get(8).activate();
 		gearIndicators.get(9).activate();
 		
+		fixedBlocks = new ArrayList<FixedBlock>();
+		
+		fixedBlocks.add(new FixedBlock(240, 665, 110, 65));
+		fixedBlocks.add(new FixedBlock(260, 650, 70, 100));
+		
+		fixedBlocks.add(new FixedBlock(240, 665 - 430, 110, 65));
+		fixedBlocks.add(new FixedBlock(260, 650 - 430, 70, 100));
+		
+		pegs = new ArrayList<GearPegZone>();
+		
+		pegs.add(new GearPegZone(280, 740));
+		pegs.add(new GearPegZone(335, 715));
+		pegs.add(new GearPegZone(225, 715));
+		
 		setVisible(true);
 	}
 
@@ -74,7 +99,7 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		backgroundGraphics.setColor(Color.BLACK);
 		backgroundGraphics.fillRect(0, 0, Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
 		
-		backgroundGraphics.setColor(new Color(3, 155, 50));
+		//backgroundGraphics.setColor(new Color(3, 155, 50));
 		backgroundGraphics.fillRect(0, 0, Constants.BOARD_WIDTH, Constants.WINDOW_HEIGHT);
 		
 		
@@ -91,28 +116,91 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		for (GearIndicator gi : gearIndicators) {
 			gi.draw(backgroundGraphics);
 		}
+		
+//		loadingZone.draw(backgroundGraphics);
+//		for (FixedBlock fb : fixedBlocks) {
+//			fb.draw(backgroundGraphics);
+//		}
+//		for (GearPegZone peg : pegs) {
+//			peg.draw(backgroundGraphics);
+//		}
+		
+		boolean canMoveUp = misfire.getY() > top;
+		if (canMoveUp) {
+			for (FixedBlock fb : fixedBlocks) {
+				if (misfire.didCollideTop(fb)) {
+					canMoveUp = false;
+					break;
+				}
 				
-		if (keys[0] && misfire.getY() > 80) {
+			}
+		}
+		boolean canMoveDown = misfire.getY() < bottom;
+		if (canMoveDown) {
+			for (FixedBlock fb : fixedBlocks) {
+				if (misfire.didCollideBottom(fb)) {
+					canMoveDown = false;
+					break;
+				}
+			}
+		}
+				
+		if (keys[0] && canMoveUp) {
 			misfire.setDirection(-90);
 			misfire.move();
 		}
-		else if (keys[2] && misfire.getY() < Constants.WINDOW_HEIGHT - 170) {
+		else if (keys[2] && canMoveDown) {
 			misfire.setDirection(+90);
 			misfire.move();
 		}
 		
-		if (keys[1] && misfire.getX() > 70) {
+		
+		
+		boolean canMoveLeft = misfire.getX() > left;
+		if (canMoveLeft) {
+			for (FixedBlock fb : fixedBlocks) {
+				if (misfire.didCollideLeft(fb)) {
+					canMoveLeft = false;
+					break;
+				}
+			}
+		}
+		boolean canMoveRight = misfire.getX() < right;
+		if (canMoveRight) {
+			for (FixedBlock fb : fixedBlocks) {
+				if (misfire.didCollideRight(fb)) {
+					canMoveRight = false;
+					break;
+				}
+			}
+		}
+		
+		if (keys[1] && canMoveLeft) {
 			misfire.setDirection(180);
 			misfire.move();
 		}
-		else if (keys[3] && misfire.getX() < 440) {
+		else if (keys[3] && canMoveRight) {
 			misfire.setDirection(0);
 			misfire.move();
 		}
 		
 		if (keys[4] && misfire.hasGear()) {
 			misfire.depositGear();
-			gears.add(new Gear(misfire));
+			
+			boolean inPegZone = false;
+			for (GearPegZone peg : pegs) {
+				if (misfire.isIn(peg)) {
+					inPegZone = true;
+					break;
+				}
+			}
+			
+			if (inPegZone) {
+				incrementGear();
+			}
+			else {
+				gears.add(new Gear(misfire));
+			}
 		}
 		
 		for (Gear g : gears) {
@@ -127,7 +215,6 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		}
 		
 		misfire.draw(backgroundGraphics);
-		//loadingZone.draw(backgroundGraphics);
 		
 		if (misfire.isIn(loadingZone)) {
 			misfire.pickUpGear();
@@ -186,6 +273,15 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+	
+	public void incrementGear() {
+		for (GearIndicator gi : gearIndicators) {
+			if (!gi.isActive()) {
+				gi.activate();
+				break;
+			}
 		}
 	}
 }
