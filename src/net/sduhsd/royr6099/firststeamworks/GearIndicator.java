@@ -9,6 +9,8 @@ public class GearIndicator extends GameObject{
 	private Image image;
 	private boolean activated = false;
 	
+	private int rotor;
+	
 	public GearIndicator() {
 		setDimensions(40,40);
 		setPos(0, 0);
@@ -18,6 +20,8 @@ public class GearIndicator extends GameObject{
 	
 	public GearIndicator(int rotor, int no) {
 		this();
+		
+		this.rotor = rotor;
 		
 		setPos(Constants.BOARD_WIDTH + 10 + rotor * (getWidth() + 10), 30 + no * (getHeight() + 10));
 	}
@@ -33,5 +37,9 @@ public class GearIndicator extends GameObject{
 	
 	public boolean isActive() {
 		return activated;
+	}
+	
+	public int getRotor() {
+		return rotor;
 	}
 }

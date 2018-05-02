@@ -25,10 +25,22 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	private List<FixedBlock> fixedBlocks;
 	private List<GearPegZone> pegs;
 	
-	private Image field;
+	private List<Hopper> hoppers;
+	private List<Ball> groundBalls, shotBalls;
+	
+	private Image field, logo;
 	private double heightMultiplier;
 	
 	private int top, bottom, left, right;
+	
+	private boolean starting_up = true;
+	
+	private int game_time = 135;
+	private int score = 40;
+	
+	private int ball_count = 0;
+	
+	private int rotor = 1;
 	
 	public Steamworks() {
 		top = 80;
@@ -44,9 +56,11 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		this.addKeyListener(this);
 		new Thread(this).start();
 		
-		keys = new boolean[5];
+		keys = new boolean[6];
 		
 		field = ImageLoader.loadImage("field.png");
+		logo = ImageLoader.loadImage("steamworks.png");
+				
 		heightMultiplier = 1.0 * field.getWidth(null) / (Constants.BOARD_WIDTH - 80);
 		
 		loadingZone = new LoadingZone();
@@ -81,6 +95,17 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		pegs.add(new GearPegZone(335, 715));
 		pegs.add(new GearPegZone(225, 715));
 		
+		hoppers = new ArrayList<Hopper>();
+		hoppers.add(new Hopper(66, 215, true));
+		hoppers.add(new Hopper(66, 462, true));
+		hoppers.add(new Hopper(66, 709, true));
+		
+		hoppers.add(new Hopper(513, 320, false));
+		hoppers.add(new Hopper(513, 605, false));
+		
+		groundBalls = new ArrayList<Ball>();
+		shotBalls = new ArrayList<Ball>();
+		
 		setVisible(true);
 	}
 
@@ -108,117 +133,220 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
 		backgroundGraphics.drawString("FIRST STEAMWORKS", 10, 34);
 		
-		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
-		backgroundGraphics.drawString(misfire.getX() + "," + misfire.getY(), Constants.BOARD_WIDTH + 10, 20);
+//		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+//		backgroundGraphics.drawString(misfire.getX() + "," + misfire.getY(), Constants.BOARD_WIDTH + 10, 20);
 
-		backgroundGraphics.drawImage(field, 30, 50, Constants.BOARD_WIDTH - 80, (int) (field.getWidth(null) * heightMultiplier), null);
-		
-		for (GearIndicator gi : gearIndicators) {
-			gi.draw(backgroundGraphics);
-		}
-		
-//		loadingZone.draw(backgroundGraphics);
-//		for (FixedBlock fb : fixedBlocks) {
-//			fb.draw(backgroundGraphics);
-//		}
-//		for (GearPegZone peg : pegs) {
-//			peg.draw(backgroundGraphics);
-//		}
-		
-		boolean canMoveUp = misfire.getY() > top;
-		if (canMoveUp) {
-			for (FixedBlock fb : fixedBlocks) {
-				if (misfire.didCollideTop(fb)) {
-					canMoveUp = false;
-					break;
-				}
-				
-			}
-		}
-		boolean canMoveDown = misfire.getY() < bottom;
-		if (canMoveDown) {
-			for (FixedBlock fb : fixedBlocks) {
-				if (misfire.didCollideBottom(fb)) {
-					canMoveDown = false;
-					break;
-				}
-			}
-		}
-				
-		if (keys[0] && canMoveUp) {
-			misfire.setDirection(-90);
-			misfire.move();
-		}
-		else if (keys[2] && canMoveDown) {
-			misfire.setDirection(+90);
-			misfire.move();
-		}
-		
-		
-		
-		boolean canMoveLeft = misfire.getX() > left;
-		if (canMoveLeft) {
-			for (FixedBlock fb : fixedBlocks) {
-				if (misfire.didCollideLeft(fb)) {
-					canMoveLeft = false;
-					break;
-				}
-			}
-		}
-		boolean canMoveRight = misfire.getX() < right;
-		if (canMoveRight) {
-			for (FixedBlock fb : fixedBlocks) {
-				if (misfire.didCollideRight(fb)) {
-					canMoveRight = false;
-					break;
-				}
-			}
-		}
-		
-		if (keys[1] && canMoveLeft) {
-			misfire.setDirection(180);
-			misfire.move();
-		}
-		else if (keys[3] && canMoveRight) {
-			misfire.setDirection(0);
-			misfire.move();
-		}
-		
-		if (keys[4] && misfire.hasGear()) {
-			misfire.depositGear();
+		if (starting_up) {
+			backgroundGraphics.drawImage(logo, 30, 60, 330, 255, null);
 			
-			boolean inPegZone = false;
-			for (GearPegZone peg : pegs) {
-				if (misfire.isIn(peg)) {
-					inPegZone = true;
-					break;
-				}
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
+			
+			backgroundGraphics.drawString("Artisinally crafted by Ronak Roy. Welcome to the2018 FIRST Robotics", 30, 340);
+			backgroundGraphics.drawString("Competition and this year's game, FIRST STEAMWORKS!", 30, 360);
+			
+			backgroundGraphics.drawString("The objective of this game is to retrieve gears from the loading station at", 30, 400);
+			backgroundGraphics.drawString("the top right of the field and drop them off at the blue alliance airship.", 30, 420);
+			backgroundGraphics.drawString("There are three pegs, located at the bottom, bottom-left, and bottom-right", 30, 440);
+			backgroundGraphics.drawString("of the airship. Be careful! Sometimes, the robot will drop a gear or miss", 30, 460);
+			backgroundGraphics.drawString("the airship!", 30, 480);
+			
+			backgroundGraphics.drawString("You can control Team 254: The Cheesy Poof's 2017 robot, Misfire, using", 30, 520);
+			backgroundGraphics.drawString("the WASD keys. Gears can be picked up and dropped off on the ground", 30, 540);
+			backgroundGraphics.drawString("or dropped off at the airship using the space bar. Good luck!", 30, 560);
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
+			backgroundGraphics.drawString("Press the space bar to begin.", 100, 620);
+			
+			if (keys[4]) {
+				starting_up = false;
+				
+				new Thread(() -> {
+					while (this.game_time > 0) {
+						try {
+							Thread.sleep(1000);
+						} catch (InterruptedException e) {
+							e.printStackTrace();
+						}
+						
+						this.game_time -= 1;
+					}
+				}).start();
+			}
+		}
+		else {
+			backgroundGraphics.drawImage(field, 30, 50, Constants.BOARD_WIDTH - 80, (int) (field.getWidth(null) * heightMultiplier), null);
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
+			backgroundGraphics.drawString("Time Remaining:", Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 100);
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
+			backgroundGraphics.drawString("" + game_time, Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 70);
+			
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
+			backgroundGraphics.drawString("Score:", Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 200);
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
+			backgroundGraphics.drawString("" + score, Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 170);
+			
+			for (GearIndicator gi : gearIndicators) {
+				gi.draw(backgroundGraphics);
 			}
 			
-			if (inPegZone) {
-				incrementGear();
+//			loadingZone.draw(backgroundGraphics);
+//			for (FixedBlock fb : fixedBlocks) {
+//				fb.draw(backgroundGraphics);
+//			}
+//			for (GearPegZone peg : pegs) {
+//				peg.draw(backgroundGraphics);
+//			}
+			
+			for (Hopper h : hoppers) {
+				h.draw(backgroundGraphics);
 			}
-			else {
+			
+			if (game_time > 0) {
+				boolean canMoveUp = misfire.getY() > top;
+				if (canMoveUp) {
+					for (FixedBlock fb : fixedBlocks) {
+						if (misfire.didCollideTop(fb)) {
+							canMoveUp = false;
+							break;
+						}
+						
+					}
+				}
+				boolean canMoveDown = misfire.getY() < bottom;
+				if (canMoveDown) {
+					for (FixedBlock fb : fixedBlocks) {
+						if (misfire.didCollideBottom(fb)) {
+							canMoveDown = false;
+							break;
+						}
+					}
+				}
+				
+				if (keys[0] && canMoveUp) {
+					misfire.setDirection(-90);
+					misfire.move();
+				}
+				else if (keys[2] && canMoveDown) {
+					misfire.setDirection(+90);
+					misfire.move();
+				}
+				
+				
+				
+				boolean canMoveLeft = misfire.getX() > left;
+				if (canMoveLeft) {
+					for (FixedBlock fb : fixedBlocks) {
+						if (misfire.didCollideLeft(fb)) {
+							canMoveLeft = false;
+							break;
+						}
+					}
+				}
+				boolean canMoveRight = misfire.getX() < right;
+				if (canMoveRight) {
+					for (FixedBlock fb : fixedBlocks) {
+						if (misfire.didCollideRight(fb)) {
+							canMoveRight = false;
+							break;
+						}
+					}
+				}
+				
+				if (keys[1] && canMoveLeft) {
+					misfire.setDirection(180);
+					misfire.move();
+				}
+				else if (keys[3] && canMoveRight) {
+					misfire.setDirection(0);
+					misfire.move();
+				}
+				
+				if (keys[4] && misfire.hasGear()) {
+					misfire.depositGear();
+					
+					boolean inPegZone = false;
+					for (GearPegZone peg : pegs) {
+						if (misfire.isIn(peg)) {
+							inPegZone = true;
+							break;
+						}
+					}
+					
+					if (inPegZone && Math.random() < 0.6) {
+						incrementGear();
+					}
+					else {
+						gears.add(new Gear(misfire));
+					}
+				}
+			}
+			
+			if (misfire.hasGear() && Math.random() < 0.005) {
 				gears.add(new Gear(misfire));
+				misfire.depositGear();
 			}
-		}
-		
-		for (Gear g : gears) {
-			if (!misfire.hasGear() && misfire.isIn(g)) {
-				gears.remove(g);
+			
+			for (Hopper h : hoppers) {
+				if (misfire.isIn(h) && h.getFilled()) {
+					h.dump();
+					
+					for (int i = 0; i < 100; i++) {
+						groundBalls.add(new Ball(h));
+					}
+				}
+			}
+			
+			for (Gear g : gears) {
+				if (!misfire.hasGear() && misfire.isIn(g)) {
+					gears.remove(g);
+					
+					misfire.pickUpGear();
+				}
+				else {
+					g.draw(backgroundGraphics);
+				}
+			}
+			
+			for (Ball b : groundBalls) {
+				if (misfire.isIn(b) && ball_count < 50) {
+					ball_count += 1;
+					
+					groundBalls.remove(b);
+				}
+				else {
+					b.draw(backgroundGraphics);
+				}
+			}
+			
+			if (keys[5]) {
+				if (ball_count > 0) {
+					ball_count--;
+					
+					shotBalls.add(new Ball(misfire));
+				}
+			}
+			
+			for (Ball b : shotBalls) {
+				b.move();
+				b.draw(backgroundGraphics);
 				
+				if (b.getX() < 0) {
+					shotBalls.remove(b);
+				}
+			}
+			
+			misfire.draw(backgroundGraphics);
+			
+			if (misfire.isIn(loadingZone)) {
 				misfire.pickUpGear();
 			}
-			else {
-				g.draw(backgroundGraphics);
-			}
+			
 		}
-		
-		misfire.draw(backgroundGraphics);
-		
-		if (misfire.isIn(loadingZone)) {
-			misfire.pickUpGear();
-		}
+
 		
 		graphics.drawImage(back, null, 0, 0);
 	}
@@ -239,6 +367,9 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		if (e.getKeyCode() == KeyEvent.VK_SPACE) {
 			keys[4] = true;
 		}
+		if (e.getKeyCode() == KeyEvent.VK_Q) {
+			keys[5] = true;
+		}
 		repaint();
 	}
 
@@ -257,6 +388,9 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		}
 		if (e.getKeyCode() == KeyEvent.VK_SPACE) {
 			keys[4] = false;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_Q) {
+			keys[5] = false;
 		}
 		repaint();
 	}
@@ -277,9 +411,21 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	}
 	
 	public void incrementGear() {
-		for (GearIndicator gi : gearIndicators) {
+		for (int i = 0; i < gearIndicators.size(); i++) {
+			GearIndicator gi = gearIndicators.get(i);
+			
 			if (!gi.isActive()) {
 				gi.activate();
+				
+				if (i < gearIndicators.size() - 1 && gearIndicators.get(i+1).getRotor() != rotor) {
+					rotor++;
+					
+					score += 40;
+				}
+				else if (i == gearIndicators.size() - 1) {
+					score += 40;
+				}
+				
 				break;
 			}
 		}
