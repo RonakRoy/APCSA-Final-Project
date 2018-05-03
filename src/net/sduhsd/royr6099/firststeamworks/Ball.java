@@ -19,12 +19,32 @@ public class Ball extends MovingObject {
 		setPos(h.getX() + h.getLeftMultiplier() * (int) (Math.random() * 80) + 3, h.getY() + (int) (Math.random() * 240) - 100);
 	}
 	
-	public Ball(Misfire m) {
+	public Ball(Misfire m, boolean left) {
 		this();
 
 		setPos(m.getX() - 5, m.getY() + m.getHeight() + 5);
 		setSpeed(2);
-		setDirection(135);
+		
+		
+		double r = Math.random();
+		int direction = 0;
+		
+		if (r > 0.8) {
+			direction = 15;
+		}
+		else if (r < 0.2) {
+			direction = -15;
+		}
+		
+		if (left) {
+			direction += 180;
+		}
+		else {
+			direction += 90;
+		}
+		
+		setDirection(direction);
+		
 	}
 	
 	public void draw(Graphics window) {

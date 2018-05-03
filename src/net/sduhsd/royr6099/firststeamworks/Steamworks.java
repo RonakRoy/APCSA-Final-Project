@@ -28,6 +28,8 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	private List<Hopper> hoppers;
 	private List<Ball> groundBalls, shotBalls;
 	
+	private HighGoal goal;
+	
 	private Image field, logo;
 	private double heightMultiplier;
 	
@@ -41,6 +43,9 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 	private int ball_count = 0;
 	
 	private int rotor = 1;
+	private int scored_balls = 0;
+	
+	private long last_shot = 0;
 	
 	public Steamworks() {
 		top = 80;
@@ -56,7 +61,7 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		this.addKeyListener(this);
 		new Thread(this).start();
 		
-		keys = new boolean[6];
+		keys = new boolean[7];
 		
 		field = ImageLoader.loadImage("field.png");
 		logo = ImageLoader.loadImage("steamworks.png");
@@ -106,6 +111,8 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		groundBalls = new ArrayList<Ball>();
 		shotBalls = new ArrayList<Ball>();
 		
+		goal = new HighGoal(64, 852);
+		
 		setVisible(true);
 	}
 
@@ -144,18 +151,21 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 			backgroundGraphics.drawString("Artisinally crafted by Ronak Roy. Welcome to the2018 FIRST Robotics", 30, 340);
 			backgroundGraphics.drawString("Competition and this year's game, FIRST STEAMWORKS!", 30, 360);
 			
-			backgroundGraphics.drawString("The objective of this game is to retrieve gears from the loading station at", 30, 400);
+			backgroundGraphics.drawString("One objective of this game is to retrieve gears from the loading station at", 30, 400);
 			backgroundGraphics.drawString("the top right of the field and drop them off at the blue alliance airship.", 30, 420);
 			backgroundGraphics.drawString("There are three pegs, located at the bottom, bottom-left, and bottom-right", 30, 440);
 			backgroundGraphics.drawString("of the airship. Be careful! Sometimes, the robot will drop a gear or miss", 30, 460);
-			backgroundGraphics.drawString("the airship!", 30, 480);
+			backgroundGraphics.drawString("the airship! The second objective of this game is to score fuel into", 30, 480);
+			backgroundGraphics.drawString("the high boiler to build steam pressure. Fuel can be collected from the", 30, 500);
+			backgroundGraphics.drawString("hoppers located on the sides of the field.", 30, 520);
 			
-			backgroundGraphics.drawString("You can control Team 254: The Cheesy Poof's 2017 robot, Misfire, using", 30, 520);
-			backgroundGraphics.drawString("the WASD keys. Gears can be picked up and dropped off on the ground", 30, 540);
-			backgroundGraphics.drawString("or dropped off at the airship using the space bar. Good luck!", 30, 560);
+			backgroundGraphics.drawString("You can control Team 254: The Cheesy Poof's 2017 robot, Misfire, using", 30, 560);
+			backgroundGraphics.drawString("the WASD keys. Gears can be picked up and dropped off on the ground", 30, 580);
+			backgroundGraphics.drawString("or dropped off at the airship using the space bar. Fuel can be fired", 30, 600);
+			backgroundGraphics.drawString("down using the e key and to the left using the q key. Good luck!", 30, 620);
 			
 			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
-			backgroundGraphics.drawString("Press the space bar to begin.", 100, 620);
+			backgroundGraphics.drawString("Press the space bar to begin.", 100, 660);
 			
 			if (keys[4]) {
 				starting_up = false;
@@ -189,6 +199,13 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
 			backgroundGraphics.drawString("" + score, Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 170);
 			
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 20));
+			backgroundGraphics.drawString("Pressure:", Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 260);
+			
+			backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
+			backgroundGraphics.drawString((scored_balls / 3) + " kPa", Constants.BOARD_WIDTH + 10, Constants.WINDOW_HEIGHT - 230);
+			
 			for (GearIndicator gi : gearIndicators) {
 				gi.draw(backgroundGraphics);
 			}
@@ -200,6 +217,8 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 //			for (GearPegZone peg : pegs) {
 //				peg.draw(backgroundGraphics);
 //			}
+//			
+//			goal.draw(backgroundGraphics);
 			
 			for (Hopper h : hoppers) {
 				h.draw(backgroundGraphics);
@@ -322,11 +341,13 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 				}
 			}
 			
-			if (keys[5]) {
-				if (ball_count > 0) {
+			if (keys[5] || keys[6]) {
+				if (ball_count > 0 && System.currentTimeMillis() - last_shot >= 50) {
 					ball_count--;
 					
-					shotBalls.add(new Ball(misfire));
+					shotBalls.add(new Ball(misfire, keys[5]));
+					
+					last_shot = System.currentTimeMillis();
 				}
 			}
 			
@@ -336,6 +357,11 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 				
 				if (b.getX() < 0) {
 					shotBalls.remove(b);
+				}
+				
+				if (goal.isIn(b)) {
+					shotBalls.remove(b);
+					scoreBall();
 				}
 			}
 			
@@ -370,6 +396,9 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		if (e.getKeyCode() == KeyEvent.VK_Q) {
 			keys[5] = true;
 		}
+		if (e.getKeyCode() == KeyEvent.VK_E) {
+			keys[6] = true;
+		}
 		repaint();
 	}
 
@@ -391,6 +420,9 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		}
 		if (e.getKeyCode() == KeyEvent.VK_Q) {
 			keys[5] = false;
+		}
+		if (e.getKeyCode() == KeyEvent.VK_E) {
+			keys[6] = false;
 		}
 		repaint();
 	}
@@ -428,6 +460,14 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 				
 				break;
 			}
+		}
+	}
+	
+	public void scoreBall() {
+		scored_balls++;
+		
+		if (scored_balls % 3 == 0) {			
+			score++;
 		}
 	}
 }

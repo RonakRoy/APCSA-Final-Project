@@ -25,8 +25,8 @@ public abstract class MovingObject extends GameObject {
 	}
 	
 	public void move() {
-		int xSpd = (int) (1.0 * speed * Math.cos(Math.toRadians(direction)));
-		int ySpd = (int) (1.0 * speed * Math.sin(Math.toRadians(direction)));
+		int xSpd = (int) Math.round(1.0 * speed * Math.cos(Math.toRadians(direction)));
+		int ySpd = (int) Math.round(1.0 * speed * Math.sin(Math.toRadians(direction)));
 		
 		setX(xSpd + getX());
 		setY(ySpd + getY());
