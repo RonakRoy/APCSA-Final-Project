@@ -140,8 +140,8 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 30));
 		backgroundGraphics.drawString("FIRST STEAMWORKS", 10, 34);
 		
-//		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
-//		backgroundGraphics.drawString(misfire.getX() + "," + misfire.getY(), Constants.BOARD_WIDTH + 10, 20);
+		backgroundGraphics.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
+		backgroundGraphics.drawString(misfire.getX() + "," + misfire.getY(), Constants.BOARD_WIDTH + 10, 20);
 
 		if (starting_up) {
 			backgroundGraphics.drawImage(logo, 30, 60, 330, 255, null);
@@ -342,7 +342,7 @@ public class Steamworks extends Canvas implements KeyListener, Runnable {
 			}
 			
 			if (keys[5] || keys[6]) {
-				if (ball_count > 0 && System.currentTimeMillis() - last_shot >= 50) {
+				if (!(misfire.getX() < 210 && misfire.getY() > 700) && ball_count > 0 && System.currentTimeMillis() - last_shot >= 50) {
 					ball_count--;
 					
 					shotBalls.add(new Ball(misfire, keys[5]));
